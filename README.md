@@ -66,3 +66,9 @@ https://www.jb51.net/article/145533.htm
 2.测试排行榜并发时，当请求量大于15000左右后，出现 【端口数不足】问题
 
 解决办法：添加连接池。
+
+3. 为了实现【要求最多只能10个协程访问mongo数据库】，解决方式也是使用mongodb的连接池
+
+官网：https://studygolang.com/articles/12685
+
+教程：https://www.cnblogs.com/Addoil/p/m12.html
