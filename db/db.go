@@ -8,33 +8,39 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-// 为了解决包循环引用问题
-type Userer interface {
-	GetId() int32
-}
-
-type Anchorer interface {
-	GetId() int32
-}
-
 const URL string = "127.0.0.1:27017"
 
-func mydb() *mgo.Database {
-	session, err := mgo.Dial(URL)
+
+func mydb() *mgo.Session {
+	//session, err := mgo.Dial(URL)
+	//if err != nil {
+	//	fmt.Println("数据库连接失败", err.Error())
+	//	return nil
+	//}
+	//
+	//return session.DB("mydb")
+
+	dialInfo := &mgo.DialInfo{
+		Addrs: []string{URL},
+		PoolLimit: 10,	 // 设置最大连接数10——》没有用。。。
+	}
+	session, err := mgo.DialWithInfo(dialInfo)
 	if err != nil {
-		fmt.Println("数据库连接失败")
+		fmt.Println("数据库连接失败", err.Error())
 		return nil
 	}
-	return session.DB("mydb")
+	//session.SetPoolL?imit(10)
+	return session.Copy()
 }
 
 // 存入日志表
 func AddToDailyDB(js []byte) {
 	// 连接表dailyOfGifts
-	con := mydb().C("dailyOfGifts")
+	session := mydb()
+	con := session.DB("mydb").C("dailyOfGifts")
+	defer session.Close()
 
 	var record data.DailyOfGifts
-	// defer session.Close()
 	json.Unmarshal(js, &record)
 	fmt.Println(record)
 
@@ -49,7 +55,9 @@ func AddToDailyDB(js []byte) {
 // 查询计算本次礼物的总价值和id
 func CalculateValue(js []byte) (int32, int32, error)  {
 	// 连接表dailyOfGifts
-	con := mydb().C("giftMessage")
+	session := mydb()
+	con := session.DB("mydb").C("giftMessage")
+	defer session.Close()
 
 	// 解析json
 	var record data.DailyOfGifts
@@ -71,7 +79,10 @@ func CalculateValue(js []byte) (int32, int32, error)  {
 
 func Findecords(anchorId int32) ([]byte, error) {
 	// 连接表dailyOfGifts
-	con := mydb().C("dailyOfGifts")
+	//con := mydb().DB("mydb").C("dailyOfGifts")
+	session := mydb()
+	con := session.DB("mydb").C("dailyOfGifts")
+	defer session.Close()
 
 	// 通过anchorid找所有的record
 	var records []data.DailyOfGifts
